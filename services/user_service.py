@@ -18,9 +18,23 @@ def create_user(name, citizenship_number, address, state, photo_url=None):
     
     if photo_url:
         user_data['photo_url'] = photo_url
+        print(f"[DEBUG] Creating user with photo_url: {photo_url}")
+    else:
+        print(f"[WARNING] Creating user WITHOUT photo_url")
     
-    response = supabase.table('users').insert(user_data).execute()
-    return response.data[0]
+    print(f"[DEBUG] User data being inserted: {user_data}")
+    
+    try:
+        response = supabase.table('users').insert(user_data).execute()
+        print(f"[DEBUG] Insert response: {response}")
+        created_user = response.data[0]
+        print(f"[DEBUG] Created user: {created_user}")
+        return created_user
+    except Exception as e:
+        print(f"[ERROR] Failed to create user: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
 
 
 def save_face_embedding(user_id, embedding):
@@ -88,24 +102,53 @@ def upload_photo_to_storage(photo_bytes, bucket_name="recognition-photos", folde
     import uuid
     from datetime import datetime
     
+    print(f"[DEBUG] Starting photo upload to bucket '{bucket_name}', folder '{folder}'")
+    print(f"[DEBUG] Photo size: {len(photo_bytes)} bytes")
+    
     # Generate unique filename
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     unique_id = str(uuid.uuid4())[:8]
     filename = f"{folder}/{timestamp}_{unique_id}.jpg"
     
+    print(f"[DEBUG] Generated filename: {filename}")
+    
     # Upload to storage
     try:
-        response = supabase.storage.from_(bucket_name).upload(
-            filename,
-            photo_bytes,
-            {"content-type": "image/jpeg"}
-        )
+        # Try to upload, if file exists, use a different name
+        try:
+            print(f"[DEBUG] Attempting upload to Supabase storage...")
+            response = supabase.storage.from_(bucket_name).upload(
+                filename,
+                photo_bytes,
+                {"content-type": "image/jpeg"}
+            )
+            print(f"[DEBUG] Upload response: {response}")
+        except Exception as upload_error:
+            print(f"[DEBUG] Upload error: {upload_error}")
+            # If file exists, try with a different unique ID
+            if "already exists" in str(upload_error).lower() or "duplicate" in str(upload_error).lower():
+                print(f"[DEBUG] File exists, trying with new unique ID...")
+                unique_id = str(uuid.uuid4())
+                filename = f"{folder}/{timestamp}_{unique_id}.jpg"
+                response = supabase.storage.from_(bucket_name).upload(
+                    filename,
+                    photo_bytes,
+                    {"content-type": "image/jpeg"}
+                )
+                print(f"[DEBUG] Retry upload response: {response}")
+            else:
+                raise upload_error
         
         # Get public URL
         public_url = supabase.storage.from_(bucket_name).get_public_url(filename)
+        print(f"[SUCCESS] Photo uploaded successfully!")
+        print(f"[SUCCESS] Public URL: {public_url}")
         return public_url
     except Exception as e:
-        print(f"Error uploading to storage: {e}")
+        print(f"[ERROR] Error uploading to storage: {e}")
+        print(f"[ERROR] Error type: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
