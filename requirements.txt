@@ -1,7 +1,7 @@
 streamlit
 insightface
 onnxruntime
-opencv-python-headless
+opencv-python
 numpy
 Pillow
 supabase
