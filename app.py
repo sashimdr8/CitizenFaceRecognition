@@ -66,6 +66,11 @@ def register_user_page():
                         # Upload photo to storage
                         photo_url = upload_photo_to_storage(image_bytes, folder="users")
                         
+                        if not photo_url:
+                            st.error("Failed to upload photo to storage. Please check your Supabase storage configuration.")
+                            st.info("Make sure the 'recognition-photos' bucket exists and is public.")
+                            return
+                        
                         # Convert image
                         image = bytes_to_image(image_bytes)
                         
@@ -84,11 +89,15 @@ def register_user_page():
                     
                     st.success("User registered successfully!")
                     st.info(f"User ID: {user['id']}")
+                    if photo_url:
+                        st.success(f"Photo uploaded successfully!")
                     
                 except ValueError as e:
                     st.error(str(e))
                 except Exception as e:
                     st.error(f"An error occurred: {str(e)}")
+                    import traceback
+                    st.error(traceback.format_exc())
 
 def recognize_face_page():
     st.header("Recognize Face")
@@ -204,15 +213,24 @@ def view_users_page():
         
         for user in users:
             with st.expander(f"{user['name']} - {mask_citizenship_number(user['citizenship_number'])}"):
-                st.write(f"**ID:** {user['id']}")
-                st.write(f"**Name:** {user['name']}")
-                st.write(f"**Citizenship Number:** {user['citizenship_number']}")
-                st.write(f"**Address:** {user['address']}")
-                st.write(f"**State:** {user['state']}")
-                if user.get('photo_url'):
-                    st.image(user['photo_url'], caption="User Photo", use_container_width=True)
-                else:
-                    st.info("No photo available")
+                col1, col2 = st.columns([1, 2])
+                
+                with col1:
+                    if user.get('photo_url'):
+                        try:
+                            st.image(user['photo_url'], caption="User Photo", use_container_width=True)
+                        except Exception as e:
+                            st.error(f"Error loading image: {str(e)}")
+                            st.write(f"Photo URL: {user['photo_url']}")
+                    else:
+                        st.info("No photo available")
+                
+                with col2:
+                    st.write(f"**ID:** {user['id']}")
+                    st.write(f"**Name:** {user['name']}")
+                    st.write(f"**Citizenship Number:** {user['citizenship_number']}")
+                    st.write(f"**Address:** {user['address']}")
+                    st.write(f"**State:** {user['state']}")
     else:
         st.info("No users found")
 
