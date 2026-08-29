@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 from utils.image_utils import bytes_to_image, validate_image_size
 from services.face_service import detect_face, validate_single_face, generate_embedding
 from services.user_service import (
@@ -12,6 +13,11 @@ from services.user_service import (
     log_recognition_attempt,
     upload_photo_to_storage
 )
+
+# Validate environment variables on startup
+if not os.environ.get("SUPABASE_URL") or not os.environ.get("SUPABASE_KEY"):
+    st.error("SUPABASE_URL and SUPABASE_KEY environment variables must be set")
+    st.stop()
 
 st.set_page_config(page_title="Face Recognition System", layout="centered")
 
