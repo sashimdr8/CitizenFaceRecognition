@@ -19,4 +19,4 @@ COPY . .
 
 EXPOSE 8080
 
-CMD streamlit run app.py --server.address=0.0.0.0 --server.port=${PORT:-8501} --server.headless=true
+CMD streamlit run app.py --server.address=0.0.0.0 --server.port=${PORT:-8080} --server.headless=true --server.enableCORS=true --server.enableXsrfProtection=false
