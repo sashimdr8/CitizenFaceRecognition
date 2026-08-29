@@ -4,10 +4,13 @@ from insightface.app import FaceAnalysis
 
 @st.cache_resource
 def load_face_model():
-    """Load InsightFace model with caching."""
-    app = FaceAnalysis(name="buffalo_l")
-    app.prepare(ctx_id=0, det_size=(640, 640))
-    return app
+    """Load InsightFace model with caching (CPU-only)."""
+    try:
+        app = FaceAnalysis(name="buffalo_l", providers=["CPUExecutionProvider"])
+        app.prepare(ctx_id=-1, det_size=(640, 640))
+        return app
+    except Exception as e:
+        raise RuntimeError(f"Failed to load face recognition model: {e}")
 
 
 def detect_face(image):
@@ -27,5 +30,5 @@ def validate_single_face(faces):
 
 
 def generate_embedding(face):
-    """Generate face embedding from detected face."""
-    return face.embedding
+    """Generate a normalized face embedding for stable cosine similarity matching."""
+    return face.normed_embedding
