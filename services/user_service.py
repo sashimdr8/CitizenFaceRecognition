@@ -1,14 +1,16 @@
-from database.supabase_client import supabase
+from database.supabase_client import ensure_supabase
 
 
 def check_citizenship_exists(citizenship_number):
     """Check if citizenship number already exists in database."""
+    supabase = ensure_supabase()
     response = supabase.table('users').select('id').eq('citizenship_number', citizenship_number).execute()
     return len(response.data) > 0
 
 
 def create_user(name, citizenship_number, address, state, photo_url=None):
     """Create a new user in the database."""
+    supabase = ensure_supabase()
     user_data = {
         'name': name,
         'citizenship_number': citizenship_number,
@@ -39,6 +41,7 @@ def create_user(name, citizenship_number, address, state, photo_url=None):
 
 def save_face_embedding(user_id, embedding):
     """Save face embedding for a user."""
+    supabase = ensure_supabase()
     embedding_data = {
         'user_id': user_id,
         'embedding': embedding.tolist()  # Convert numpy array to list
@@ -49,6 +52,7 @@ def save_face_embedding(user_id, embedding):
 
 def get_user_by_id(user_id):
     """Get user information by ID."""
+    supabase = ensure_supabase()
     response = supabase.table('users').select('*').eq('id', user_id).execute()
     if response.data:
         return response.data[0]
@@ -57,6 +61,7 @@ def get_user_by_id(user_id):
 
 def get_all_users(search_name=None, search_citizenship=None):
     """Get all users with optional search filters."""
+    supabase = ensure_supabase()
     query = supabase.table('users').select('*')
     
     if search_name:
@@ -71,6 +76,7 @@ def get_all_users(search_name=None, search_citizenship=None):
 
 def match_face_embedding(query_embedding, threshold=0.5, match_count=1):
     """Find matching face using pgvector similarity search."""
+    supabase = ensure_supabase()
     # Note: This requires the match_face function to be created in Supabase SQL
     # For now, we'll use a simple approach with raw SQL via supabase.rpc
     
@@ -99,6 +105,7 @@ def mask_citizenship_number(citizenship_number):
 
 def upload_photo_to_storage(photo_bytes, bucket_name="recognition-photos", folder="logs"):
     """Upload photo to Supabase Storage and return the public URL."""
+    supabase = ensure_supabase()
     import uuid
     from datetime import datetime
     
@@ -154,6 +161,7 @@ def upload_photo_to_storage(photo_bytes, bucket_name="recognition-photos", folde
 
 def log_recognition_attempt(status, matched_user_id=None, similarity=None, photo_url=None, error_message=None):
     """Log face recognition attempt to database."""
+    supabase = ensure_supabase()
     log_data = {
         'status': status
     }
@@ -176,5 +184,6 @@ def log_recognition_attempt(status, matched_user_id=None, similarity=None, photo
 
 def get_recognition_logs(limit=50):
     """Get recent recognition logs."""
+    supabase = ensure_supabase()
     response = supabase.table('recognition_logs').select('*').order('created_at', desc=True).limit(limit).execute()
     return response.data
