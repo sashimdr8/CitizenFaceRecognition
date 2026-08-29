@@ -30,11 +30,23 @@ def main():
 def register_user_page():
     st.header("Register User")
     
+    is_nepali = st.checkbox("Is Nepali?", value=True)
+    
     with st.form("registration_form"):
         name = st.text_input("Name")
-        citizenship_number = st.text_input("Citizenship Number")
+        gender = st.selectbox("Gender", ["Male", "Female", "Other"])
+        age = st.number_input("Age", min_value=0, max_value=150, value=0)
+        
+        citizenship_number = st.text_input("Citizenship Number (Optional)")
+        
+        if is_nepali:
+            nationality = st.text_input("Nationality", value="Nepali", disabled=True)
+        else:
+            nationality = st.text_input("Nationality")
+        
         address = st.text_area("Address")
         state = st.text_input("State / Province")
+        missing_from_text = st.text_input("Missing From Text")
         photo = st.file_uploader("Upload Photo", type=["jpg", "jpeg", "png"])
         
         submitted = st.form_submit_button("Register User")
@@ -43,12 +55,14 @@ def register_user_page():
             # Validation
             if not name:
                 st.error("Name is required.")
-            elif not citizenship_number:
-                st.error("Citizenship number is required.")
+            elif not gender:
+                st.error("Gender is required.")
+            elif age is None or age == 0:
+                st.error("Age is required.")
+            elif not nationality:
+                st.error("Nationality is required.")
             elif not address:
                 st.error("Address is required.")
-            elif not state:
-                st.error("State / Province is required.")
             elif not photo:
                 st.error("Photo is required.")
             else:
@@ -58,8 +72,8 @@ def register_user_page():
                         image_bytes = photo.getvalue()
                         validate_image_size(image_bytes)
                         
-                        # Check for duplicate citizenship
-                        if check_citizenship_exists(citizenship_number):
+                        # Check for duplicate citizenship only if provided
+                        if citizenship_number and check_citizenship_exists(citizenship_number):
                             st.error("This citizenship number is already registered.")
                             return
                         
@@ -82,7 +96,7 @@ def register_user_page():
                         embedding = generate_embedding(face)
                         
                         # Create user with photo URL
-                        user = create_user(name, citizenship_number, address, state, photo_url)
+                        user = create_user(name, citizenship_number, address, state, photo_url, gender, age, is_nepali, nationality, missing_from_text)
                         
                         # Save embedding
                         save_face_embedding(user['id'], embedding)
@@ -147,6 +161,7 @@ def recognize_face_page():
                         st.write(f"**Citizenship:** {user['citizenship_number']}")
                         st.write(f"**Address:** {user['address']}")
                         st.write(f"**State:** {user['state']}")
+                        st.write(f"**Missing From:** {user.get('missing_from_text', 'N/A')}")
                         st.write(f"**Similarity:** {match['similarity']:.2f}")
                         
                         # Log successful recognition
@@ -228,9 +243,14 @@ def view_users_page():
                 with col2:
                     st.write(f"**ID:** {user['id']}")
                     st.write(f"**Name:** {user['name']}")
+                    st.write(f"**Gender:** {user.get('gender', 'N/A')}")
+                    st.write(f"**Age:** {user.get('age', 'N/A')}")
+                    st.write(f"**Is Nepali:** {'Yes' if user.get('is_nepali') else 'No'}")
+                    st.write(f"**Nationality:** {user.get('nationality', 'N/A')}")
                     st.write(f"**Citizenship Number:** {user['citizenship_number']}")
                     st.write(f"**Address:** {user['address']}")
                     st.write(f"**State:** {user['state']}")
+                    st.write(f"**Missing From:** {user.get('missing_from_text', 'N/A')}")
     else:
         st.info("No users found")
 

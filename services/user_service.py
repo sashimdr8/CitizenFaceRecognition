@@ -8,21 +8,38 @@ def check_citizenship_exists(citizenship_number):
     return len(response.data) > 0
 
 
-def create_user(name, citizenship_number, address, state, photo_url=None):
+def create_user(name, citizenship_number, address, state, photo_url=None, gender=None, age=None, is_nepali=None, nationality=None, missing_from_text=None):
     """Create a new user in the database."""
     supabase = ensure_supabase()
     user_data = {
         'name': name,
-        'citizenship_number': citizenship_number,
         'address': address,
         'state': state
     }
+    
+    if citizenship_number:
+        user_data['citizenship_number'] = citizenship_number
     
     if photo_url:
         user_data['photo_url'] = photo_url
         print(f"[DEBUG] Creating user with photo_url: {photo_url}")
     else:
         print(f"[WARNING] Creating user WITHOUT photo_url")
+    
+    if gender:
+        user_data['gender'] = gender
+    
+    if age is not None:
+        user_data['age'] = age
+    
+    if is_nepali is not None:
+        user_data['is_nepali'] = is_nepali
+    
+    if nationality:
+        user_data['nationality'] = nationality
+    
+    if missing_from_text:
+        user_data['missing_from_text'] = missing_from_text
     
     print(f"[DEBUG] User data being inserted: {user_data}")
     
